@@ -81,18 +81,18 @@ class Detector(ADetector):
             
         }
 
-        dataset_pt = torch.save(unlabeled_processed_data)
-        return dataset_pt
+        
+        return unlabeled_processed_data
 
 
 
 ################## 2 #######################
-    def _calculate_confidence(self, dataset_pt):
+    def _calculate_confidence(self, unlabeled_processed_data):
         MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model.pt'                      
         BATCH_SIZE = 16                                   
 
         
-        unlabeled_data = torch.load(dataset_pt, map_location=torch.device('cpu'))
+        unlabeled_data = unlabeled_processed_data
         unlabeled_dataset = TensorDataset(
             unlabeled_data['input_ids'],
             unlabeled_data['attention_mask'],
