@@ -80,17 +80,19 @@ class Detector(ADetector):
             'user_ids': user_ids 
             
         }
-        return unlabeled_processed_data
+
+        dataset_pt = torch.save(unlabeled_processed_data)
+        return dataset_pt
 
 
 
 ################## 2 #######################
-    def _calculate_confidence(self, unlabeled_processed_data):
+    def _calculate_confidence(self, dataset_pt):
         MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model.pt'                      
         BATCH_SIZE = 16                                   
 
         
-        unlabeled_data = unlabeled_processed_data
+        unlabeled_data = torch.load(dataset_pt, map_location=torch.device('cpu'))
         unlabeled_dataset = TensorDataset(
             unlabeled_data['input_ids'],
             unlabeled_data['attention_mask'],
@@ -104,7 +106,7 @@ class Detector(ADetector):
             'bert-base-uncased',
             num_labels=2
         )
-        model.load_state_dict(torch.load(MODEL_PATH))
+        model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
 
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
