@@ -7,7 +7,7 @@ import re
 import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import BertForSequenceClassification, BertTokenizer
+from transformers import RobertaTokenizer, RobertaForSequenceClassification
 
 class Detector(ADetector):
     def detect_bot(self, session_data):
@@ -26,7 +26,7 @@ class Detector(ADetector):
 
         return marked_account
 
-####################### 1 #######################
+####################### 1. Data Processor#######################
     def _process_data(self, unlabeled_data):
 
        
@@ -47,7 +47,6 @@ class Detector(ADetector):
         user_ids = list(users_dict.keys())
         
 
-        # Function to concatenate description and posts' texts (same as data_process.py)
         def get_concatenated_texts(user_ids, users_dict):
             texts = []
             for user_id in user_ids:
@@ -62,7 +61,7 @@ class Detector(ADetector):
             return texts
 
         
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 
         
         unlabeled_texts = get_concatenated_texts(user_ids, users_dict)
@@ -86,7 +85,7 @@ class Detector(ADetector):
 
 
 
-################## 2 #######################
+################## 2. Evaluate the data with the model #######################
     def _calculate_confidence(self, unlabeled_processed_data):
         MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model.pt'                      
         BATCH_SIZE = 16                                   
@@ -102,9 +101,9 @@ class Detector(ADetector):
         unlabeled_data_loader = DataLoader(unlabeled_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
        
-        model = BertForSequenceClassification.from_pretrained(
-            'bert-base-uncased',
-            num_labels=2
+        model = RobertaForSequenceClassification.from_pretrained(
+            'roberta-base',
+            num_labels=2 
         )
         model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
 
