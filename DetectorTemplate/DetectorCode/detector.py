@@ -8,6 +8,7 @@ import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import CamembertTokenizer, CamembertForSequenceClassification
+import sentencepiece
 
 class Detector(ADetector):
     def detect_bot(self, session_data):

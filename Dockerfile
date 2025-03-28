@@ -4,6 +4,7 @@ RUN pip install requests
 RUN pip install pydantic
 RUN pip install torch
 RUN pip install transformers
+RUN pip install sentencepiece
 
 #Important so we will have access to the run.sh file 
 COPY . . 
