@@ -5,7 +5,7 @@ RUN pip install pydantic
 RUN pip install torch
 RUN pip install transformers
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential cmake
-RUN pip install sentencepiece==0.1.99
+RUN pip install sentencepiece
 
 #Important so we will have access to the run.sh file 
 COPY . . 
