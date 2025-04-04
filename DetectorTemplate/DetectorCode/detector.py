@@ -8,7 +8,7 @@ import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
-import sentencepiece
+
 
 class Detector(ADetector):
     def detect_bot(self, session_data):
