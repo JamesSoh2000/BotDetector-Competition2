@@ -7,7 +7,8 @@ import re
 import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import RobertaTokenizer, RobertaForSequenceClassification
+from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
+import sentencepiece
 
 class Detector(ADetector):
     def detect_bot(self, session_data):
@@ -61,7 +62,7 @@ class Detector(ADetector):
             return texts
 
         
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+        tokenizer = DebertaV2Tokenizer.from_pretrained('microsoft/deberta-v3-base')
 
         
         unlabeled_texts = get_concatenated_texts(user_ids, users_dict)
@@ -86,9 +87,8 @@ class Detector(ADetector):
 
 
 ################## 2. Evaluate the data with the model #######################
-# Based on T3/prediction.py
     def _calculate_confidence(self, unlabeled_processed_data):
-        MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model.pt'                      
+        MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model_Fr.pt'                      
         BATCH_SIZE = 16                                   
 
         
@@ -102,8 +102,8 @@ class Detector(ADetector):
         unlabeled_data_loader = DataLoader(unlabeled_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
        
-        model = RobertaForSequenceClassification.from_pretrained(
-            'roberta-base',
+        model = DebertaV2ForSequenceClassification.from_pretrained(
+            'microsoft/deberta-v3-base',
             num_labels=2 
         )
         model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
