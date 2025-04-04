@@ -7,7 +7,7 @@ import re
 import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
+from transformers import CamembertTokenizer, CamembertForSequenceClassification
 import sentencepiece
 
 class Detector(ADetector):
@@ -62,7 +62,7 @@ class Detector(ADetector):
             return texts
 
         
-        tokenizer = DebertaV2Tokenizer.from_pretrained('microsoft/deberta-v3-base')
+        tokenizer = CamembertTokenizer.from_pretrained('camembert-base')
 
         
         unlabeled_texts = get_concatenated_texts(user_ids, users_dict)
@@ -102,8 +102,8 @@ class Detector(ADetector):
         unlabeled_data_loader = DataLoader(unlabeled_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
        
-        model = DebertaV2ForSequenceClassification.from_pretrained(
-            'microsoft/deberta-v3-base',
+        model = CamembertForSequenceClassification.from_pretrained(
+            'camembert-base',
             num_labels=2 
         )
         model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
