@@ -160,7 +160,7 @@ class Detector(ADetector):
 
 ################## 2. Evaluate the data with the model #######################
     def _calculate_confidence(self, unlabeled_processed_data):
-        MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model_BCE.pt'                      
+        MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model_enhanced_dropout.pt'                      
         BATCH_SIZE = 16                                   
         HIDDEN_DROPOUT_RATE = 0.1
         ATTENTION_DROPOUT_RATE = 0.1
