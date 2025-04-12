@@ -12,32 +12,75 @@ import sentencepiece
 
 ### This is a custom model class that adds dropout layers to the DeBERTa model
 class DebertaWithDropout(torch.nn.Module):
-    def __init__(self, dropout_rate=0.2):
-        super(DebertaWithDropout, self).__init__()
-        self.deberta = DebertaV2ForSequenceClassification.from_pretrained(
-            'microsoft/deberta-v3-base',
-            num_labels=2  # Binary classification: bot (1) or non-bot (0)
-        )
-        # Add dropout layers between different components
-        self.hidden_dropout = torch.nn.Dropout(dropout_rate)  # After hidden layers
-        self.output_dropout = torch.nn.Dropout(dropout_rate)  # Before final classification
+    def __init__(self, model_name='microsoft/deberta-v3-base', num_labels=2,
+                 hidden_dropout_rate=0.1, attention_dropout_rate=0.1, classifier_dropout_rate=0.2):
+        super().__init__()
+        self.num_labels = num_labels
         
-    def forward(self, input_ids=None, attention_mask=None, labels=None):
-        # DO NOT apply dropout directly to input_ids as they are indices
-        # Get DeBERTa outputs
+        # Load base model configuration
+        config = DebertaV2Config.from_pretrained(
+            model_name,
+            num_labels=num_labels
+        )
+        
+        # Override dropout rates in the config for the base model
+        config.hidden_dropout_prob = hidden_dropout_rate
+        config.attention_probs_dropout_prob = attention_dropout_rate
+        
+        # Load the base DeBERTa model (without the classification head initially)
+        self.deberta = DebertaV2Model.from_pretrained(model_name, config=config)
+        
+        # Define the dropout layer to be applied before the classifier
+        self.classifier_dropout = torch.nn.Dropout(classifier_dropout_rate)
+        
+        # Define the classifier layer
+        self.classifier = torch.nn.Linear(config.hidden_size, num_labels)
+        
+        # Store config for potential later use
+        self.config = config
+    
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
+                position_ids=None, inputs_embeds=None, labels=None,
+                output_attentions=None, output_hidden_states=None, return_dict=None):
+                
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        
+        # Get outputs from the base DeBERTa model
         outputs = self.deberta(
-            input_ids=input_ids,
+            input_ids,
             attention_mask=attention_mask,
-            labels=labels,
-            output_hidden_states=True
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=True,
+            return_dict=return_dict,
         )
         
-        # During training, apply dropout to the logits
-        # During evaluation (model.eval()), dropout will be automatically disabled
+        # Standard pooling for sequence classification: Use the hidden state of the first token
+        last_hidden_state = outputs.last_hidden_state
+        pooled_output = last_hidden_state[:, 0]
+        
+        # Apply classifier dropout only during training
         if self.training:
-            outputs.logits = self.output_dropout(outputs.logits)
+            pooled_output = self.classifier_dropout(pooled_output)
             
-        return outputs
+        # Pass the pooled output through the classifier to get logits
+        logits = self.classifier(pooled_output)
+        
+        loss = None
+        
+        if not return_dict:
+            output = (logits,) + outputs[1:]
+            return ((loss,) + output) if loss is not None else output
+            
+        # Return results in the standard HF SequenceClassifierOutput format
+        return SequenceClassifierOutput(
+            loss=loss,
+            logits=logits,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
+        )
 
 class Detector(ADetector):
     def detect_bot(self, session_data):
@@ -119,7 +162,9 @@ class Detector(ADetector):
     def _calculate_confidence(self, unlabeled_processed_data):
         MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model_BCE.pt'                      
         BATCH_SIZE = 16                                   
-        DROPOUT_RATE = 0.3  
+        HIDDEN_DROPOUT_RATE = 0.1
+        ATTENTION_DROPOUT_RATE = 0.1
+        CLASSIFIER_DROPOUT_RATE = 0.2  
         
         unlabeled_data = unlabeled_processed_data
         unlabeled_dataset = TensorDataset(
@@ -130,8 +175,12 @@ class Detector(ADetector):
 
         unlabeled_data_loader = DataLoader(unlabeled_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-       
-        model = DebertaWithDropout(dropout_rate=DROPOUT_RATE)  # Initialize with the same dropout rate
+        # Load the Trained Model
+        model = DebertaWithDropout(
+            hidden_dropout_rate=HIDDEN_DROPOUT_RATE,
+            attention_dropout_rate=ATTENTION_DROPOUT_RATE,
+            classifier_dropout_rate=CLASSIFIER_DROPOUT_RATE
+        )  # Initialize with the same dropout rates
         # Move model to device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
