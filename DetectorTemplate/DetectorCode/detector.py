@@ -132,13 +132,10 @@ class Detector(ADetector):
 
        
         model = DebertaWithDropout(dropout_rate=DROPOUT_RATE)  # Initialize with the same dropout rate
-        
-        model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
-
-
+        # Move model to device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
-
+        model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
 
         model.eval()  
         predictions = []  
