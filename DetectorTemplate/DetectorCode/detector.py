@@ -10,6 +10,35 @@ from torch.utils.data import DataLoader, TensorDataset
 from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
 import sentencepiece
 
+### This is a custom model class that adds dropout layers to the DeBERTa model
+class DebertaWithDropout(torch.nn.Module):
+    def __init__(self, dropout_rate=0.2):
+        super(DebertaWithDropout, self).__init__()
+        self.deberta = DebertaV2ForSequenceClassification.from_pretrained(
+            'microsoft/deberta-v3-base',
+            num_labels=2  # Binary classification: bot (1) or non-bot (0)
+        )
+        # Add dropout layers between different components
+        self.hidden_dropout = torch.nn.Dropout(dropout_rate)  # After hidden layers
+        self.output_dropout = torch.nn.Dropout(dropout_rate)  # Before final classification
+        
+    def forward(self, input_ids=None, attention_mask=None, labels=None):
+        # DO NOT apply dropout directly to input_ids as they are indices
+        # Get DeBERTa outputs
+        outputs = self.deberta(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            labels=labels,
+            output_hidden_states=True
+        )
+        
+        # During training, apply dropout to the logits
+        # During evaluation (model.eval()), dropout will be automatically disabled
+        if self.training:
+            outputs.logits = self.output_dropout(outputs.logits)
+            
+        return outputs
+
 class Detector(ADetector):
     def detect_bot(self, session_data):
         marked_account = []
@@ -90,7 +119,7 @@ class Detector(ADetector):
     def _calculate_confidence(self, unlabeled_processed_data):
         MODEL_PATH = 'DetectorTemplate/DetectorCode/best_model2.pt'                      
         BATCH_SIZE = 16                                   
-
+        DROPOUT_RATE = 0.3  
         
         unlabeled_data = unlabeled_processed_data
         unlabeled_dataset = TensorDataset(
@@ -102,10 +131,8 @@ class Detector(ADetector):
         unlabeled_data_loader = DataLoader(unlabeled_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
        
-        model = DebertaV2ForSequenceClassification.from_pretrained(
-            'microsoft/deberta-v3-base',
-            num_labels=2 
-        )
+        model = DebertaWithDropout(dropout_rate=DROPOUT_RATE)  # Initialize with the same dropout rate
+        
         model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
 
 
