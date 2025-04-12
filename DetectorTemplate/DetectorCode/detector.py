@@ -7,7 +7,7 @@ import re
 import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
+from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification, DebertaV2Model, DebertaV2Config
 import sentencepiece
 
 ### This is a custom model class that adds dropout layers to the DeBERTa model
