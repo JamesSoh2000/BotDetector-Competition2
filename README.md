@@ -26,9 +26,9 @@ flowchart LR
     A[Twitter API] --> B[Python Ingestion Script]
     B --> C[S3 Raw Layer<br/>s3://my-project/raw/]
     C --> D[Python Processing Script<br/>Pandas + Cleaning]
-    D --> E[S3 Refined Layer<br/>Parquet<br/>s3://BotDetection-project/refined/]
+    D --> E[S3 Refined Layer<br/>Parquet<br/>s3://my-project/refined/]
     E --> F[AWS SageMaker PyTorch Training Job]
-    F --> G[S3 Model Artifacts<br/>s3://BotDetection-project/model-artifacts/]
+    F --> G[S3 Model Artifacts<br/>s3://my-project/model-artifacts/]
     F --> H[Evaluation Metrics<br/>Accuracy Precision Recall F1]
     H --> I[Comparison vs OpenAI Baseline]
 ```
